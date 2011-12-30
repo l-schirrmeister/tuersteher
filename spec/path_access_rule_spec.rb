@@ -2,11 +2,11 @@ require "spec_helper"
 
 module Tuersteher
 
-  describe PathAccessRule do
+  describe AccessRule::Path do
 
     context "grant" do
       before(:all) do
-        @rule = PathAccessRule.new('/admin').grant.method(:get).role(:sysadmin).role(:admin)
+        @rule = AccessRule::Path.new('/admin').grant.method(:get).role(:sysadmin).role(:admin)
       end
 
 
@@ -44,7 +44,7 @@ module Tuersteher
 
       context "Rule with :all as Path-Matcher" do
         before(:all) do
-          @rule = PathAccessRule.new(:all).method(:get).role(:sysadmin).role(:admin)
+          @rule = AccessRule::Path.new(:all).method(:get).role(:sysadmin).role(:admin)
           @user = stub('user')
           @user.stub(:has_role?).and_return(true)
         end
@@ -63,7 +63,7 @@ module Tuersteher
 
       context "Rule with no Methode spezifed => all methods allowed" do
         before(:all) do
-          @rule = PathAccessRule.new('/admin').role(:sysadmin).role(:admin)
+          @rule = AccessRule::Path.new('/admin').role(:sysadmin).role(:admin)
           @user = stub('user')
           @user.stub(:has_role?).and_return(true)
         end
@@ -83,7 +83,7 @@ module Tuersteher
 
       context "Rule with no role spezifed => now role needed" do
         before(:all) do
-          @rule = PathAccessRule.new('/public').method(:get)
+          @rule = AccessRule::Path.new('/public').method(:get)
           @user = stub('user')
           @user.stub(:has_role?).and_return(false)
         end
@@ -104,8 +104,8 @@ module Tuersteher
 
       context "Rule with extension" do
         before(:all) do
-          @rule = PathAccessRule.new('/admin').method(:get).extension(:modul_function?, :testvalue)
-          @rule2 = PathAccessRule.new('/admin').method(:get).extension(:modul_function2?)
+          @rule = AccessRule::Path.new('/admin').method(:get).extension(:modul_function?, :testvalue)
+          @rule2 = AccessRule::Path.new('/admin').method(:get).extension(:modul_function2?)
           @user = stub('user')
           @user.stub(:has_role?).and_return(false)
         end
@@ -134,7 +134,7 @@ module Tuersteher
 
     context "deny" do
       before(:all) do
-        @rule = PathAccessRule.new('/admin').deny.role(:user)
+        @rule = AccessRule::Path.new('/admin').deny.role(:user)
         @user = stub('user')
       end
 
@@ -150,39 +150,69 @@ module Tuersteher
     end # of context "deny" do
 
 
-    context "with not as role prefix" do
-      before(:all) do
-        @rule = PathAccessRule.new('/admin').deny.not.role(:admin)
-        @user = stub('user')
+    context "with not" do
+
+      context "as prefix for role" do
+
+        before(:all) do
+          @rule = AccessRule::Path.new('/admin').deny.not.role(:admin)
+          @user = stub('user')
+        end
+
+        it "should not fired for user with role :admin" do
+          @user.stub(:has_role?) { |role| role == :admin }
+          @rule.fired?("/admin", :get, @user).should_not be_true
+        end
+
+        it "should fired for user with role :user" do
+          @user.stub(:has_role?){|role| role==:user}
+          @rule.fired?("/admin", :get, @user).should be_true
+        end
       end
 
-      it "should not fired for user with role :admin" do
-        @user.stub(:has_role?){|role| role==:admin}
-        @rule.fired?("/admin", :get, @user).should_not be_true
-      end
+      context "as prefix for extension" do
+        before(:all) do
+          @rule = AccessRule::Path.new('/admin').grant.role(:admin).not.extension(:login_ctx_method)
+          @user = stub('user')
+        end
 
-      it "should fired for user with role :user" do
-        @user.stub(:has_role?){|role| role==:user}
-        @rule.fired?("/admin", :get, @user).should be_true
-      end
+        it "should fired for user with role :admin and false for extension" do
+          @user.stub(:has_role?){|role| role==:admin}
+          @user.should_receive(:login_ctx_method).and_return(false)
+          @rule.fired?("/admin", :get, @user).should be_true
+        end
+
+        it "should not fired for user with role :admin and true for extension" do
+          @user.stub(:has_role?){|role| role==:admin}
+          @user.should_receive(:login_ctx_method).and_return(true)
+          @rule.fired?("/admin", :get, @user).should_not be_true
+        end
+
+        it "should not fired for user with role :user" do
+          @user.stub(:has_role?){|role| role==:user}
+          @rule.fired?("/admin", :get, @user).should be_false
+        end
+
+      end #as prefix for extension
+
     end # of context "not" do
 
 
     context "add multiple roles" do
       before(:all) do
-        @rule = PathAccessRule.new('/admin').roles(:admin1, :admin2).roles([:s1, :s2])
+        @rule = AccessRule::Path.new('/admin').roles(:admin1, :admin2).roles([:s1, :s2])
         @user = stub('user')
       end
 
       it "should fired for user with role which specified in the rule" do
         [:admin1, :admin2, :s1, :s2].each do |role_name|
-          @user.stub(:has_role?){|role| role==role_name}
+          @user.stub(:has_role?) { |role| role==role_name }
           @rule.fired?("/admin", :get, @user).should be_true
         end
       end
 
       it "should not fired for user with role :user" do
-        @user.stub(:has_role?){|role| role==:user}
+        @user.stub(:has_role?) { |role| role==:user }
         @rule.fired?("/admin", :get, @user).should_not be_true
       end
     end

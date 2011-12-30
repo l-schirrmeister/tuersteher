@@ -26,8 +26,8 @@ module Tuersteher
 
 
     before do
-      rules = [ModelAccessRule.new(SampleModel).grant.method(:deactived).role(:admin)]
-      rules << ModelAccessRule.new(SampleModel2).grant.method(:var=).role(:user).extension(:allow_setup_var_with?, :object => false, :pass_args => true)
+      rules = [AccessRule::Model.new(SampleModel).grant.method(:deactived).role(:admin)]
+      rules << AccessRule::Model.new(SampleModel2).grant.method(:var=).role(:user).extension(:allow_setup_var_with?, :object => false, :pass_args => true)
       AccessRulesStorage.instance.stub(:model_rules).and_return(rules)
       @user = stub('user')
       Thread.current[:user] = @user

@@ -2,11 +2,11 @@ require "spec_helper"
 
 module Tuersteher
 
-  describe ModelAccessRule do
+  describe AccessRule::Model do
 
     context "grant without user" do
       before do
-        @rule = ModelAccessRule.new(String).grant.method(:all)
+        @rule = AccessRule::Model.new(String).grant.method(:all)
       end
 
       it "should fired without user" do
@@ -23,7 +23,7 @@ module Tuersteher
     context "grant with roles" do
 
       before(:all) do
-        @rule = ModelAccessRule.new(String).grant.method(:read).role(:sysadmin).role(:admin)
+        @rule = AccessRule::Model.new(String).grant.method(:read).role(:sysadmin).role(:admin)
       end
 
       context "for User with role :admin" do
@@ -58,7 +58,7 @@ module Tuersteher
 
       context "for :all Model-Instances" do
         before do
-          @rule_all = ModelAccessRule.new(:all).grant.role(:admin)
+          @rule_all = AccessRule::Model.new(:all).grant.role(:admin)
           @user = stub('user')
         end
 
@@ -77,7 +77,7 @@ module Tuersteher
 
     context "deny with not.role" do
       before(:all) do
-        @rule = ModelAccessRule.new(String).deny.method(:append).not.role(:admin)
+        @rule = AccessRule::Model.new(String).deny.method(:append).not.role(:admin)
         @user = stub('user')
       end
 
@@ -101,7 +101,7 @@ module Tuersteher
       context "without params" do
       
         before(:all) do
-          @rule = ModelAccessRule.new(String).grant.method(:append).user_extension(:has_permission?).user_extension(:is_allowed_to?)  
+          @rule = AccessRule::Model.new(String).grant.method(:append).user_extension(:has_permission?).user_extension(:is_allowed_to?)  
         end
       
         it "should fire for a user with given permissions" do
@@ -125,13 +125,13 @@ module Tuersteher
       end #of context without params
       
       it "should raise an exception if the given option is not known" do
-        lambda{ModelAccessRule.new(String).grant.method(:append).user_extension(:has_permission?, {:invalid => "option"})}.should raise_exception(RuntimeError, "option invalid not known")
+        lambda{AccessRule::Model.new(String).grant.method(:append).user_extension(:has_permission?, {:invalid => "option"})}.should raise_exception(RuntimeError, "option invalid not known")
       end  
        
       context "with value option" do  
         
         before(:all) do
-          @rule = ModelAccessRule.new(String).grant.method(:append).user_extension(:has_permission?).user_extension(:permissions, {:value => [:append]})  
+          @rule = AccessRule::Model.new(String).grant.method(:append).user_extension(:has_permission?).user_extension(:permissions, {:value => [:append]})  
         end
         
         it "should fire if the given value is met" do
@@ -151,7 +151,7 @@ module Tuersteher
       context "with object option" do
         
         before(:all) do
-          @rule = ModelAccessRule.new(String).grant.method(:append).user_extension(:has_permission?).user_extension(:allowed_extension?, :object => true)
+          @rule = AccessRule::Model.new(String).grant.method(:append).user_extension(:has_permission?).user_extension(:allowed_extension?, :object => true)
         end
         
         it "should fire if the the called extension returns true" do
@@ -171,7 +171,7 @@ module Tuersteher
       context "with args option" do
          
         before(:all) do
-          @rule = ModelAccessRule.new(String).grant.method(:append).user_extension(:has_permission?).user_extension(:allowed_extension?, :args => ['extension'])
+          @rule = AccessRule::Model.new(String).grant.method(:append).user_extension(:has_permission?).user_extension(:allowed_extension?, :args => ['extension'])
         end
         
         it "should fire if the the called extension returns true" do
