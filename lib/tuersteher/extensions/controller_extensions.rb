@@ -64,7 +64,7 @@ module Tuersteher
         # bei nicht production-env check-intervall auf 5 sek setzen
         ar_storage.check_intervall = 5 if Rails.env!='production'
         # set root-path as prefix for all path rules
-        prefix = respond_to?(:root_path) && root_path
+        prefix = respond_to?(:main_app) && main_app.respond_to?(:root_path) && main_app.root_path
         ar_storage.path_prefix = prefix if prefix && prefix.size > 1
         ar_storage.read_rules
       end
